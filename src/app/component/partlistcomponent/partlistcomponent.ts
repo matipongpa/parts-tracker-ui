@@ -8,6 +8,7 @@ import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { CommonModule } from '@angular/common';
 
 /**
  * @title Basic use of `<table mat-table>`
@@ -25,11 +26,13 @@ import { MatButtonModule } from '@angular/material/button';
     ReactiveFormsModule,
     MatButtonModule,
     MatIconModule,
+    CommonModule,
   ],
 })
 export class Partlistcomponent {
   constructor(private api: Api) {}
 
+  isShowFilter: boolean = false;
   dataSource: Part[] = [];
   searchFormControl = new FormControl('', []);
 
@@ -50,6 +53,12 @@ export class Partlistcomponent {
       },
     });
   }
+
+  onClickFilter() {
+    this.isShowFilter = !this.isShowFilter;
+    console.log('isShow', this.isShowFilter);
+  }
+
   displayedColumns: string[] = [
     'id',
     'part_number',

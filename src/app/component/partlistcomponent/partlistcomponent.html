@@ -1,17 +1,16 @@
 <h1>Part List</h1>
 <div class="table-area">
-  <button matMiniFab>
-    <mat-icon>filter_alt</mat-icon>
-  </button>
-  <!-- <mat-form-field class="example-full-width">
-    <mat-label>Search part number</mat-label>
-    <input
-      matInput
-      type="email"
-      [formControl]="searchFormControl"
-      placeholder="Ex. Part number"
-    />
-  </mat-form-field> -->
+  <div [ngClass]="isShowFilter ? 'filter-tab' : 'filter-tab-no-border'">
+    <button matMiniFab (click)="onClickFilter()">
+      <mat-icon>filter_alt</mat-icon>
+    </button>
+    <div
+      [ngStyle]="isShowFilter ? null : { display: 'none' }"
+      class="ml-2 filter-item"
+    >
+      <input class="search-input" type="email" placeholder="Ex. Part number" />
+    </div>
+  </div>
   <table
     mat-table
     [dataSource]="dataSource"
