@@ -10,10 +10,18 @@
     >
       <input
         class="search-input"
-        type="email"
-        placeholder="Ex. Part number"
+        type="text"
+        placeholder="Part number"
         [(ngModel)]="partNumber"
       />
+
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Value"
+        [(ngModel)]="value"
+      />
+
       <button class="search-button" matButton="elevated" (click)="onSearch()">
         Search
       </button>
