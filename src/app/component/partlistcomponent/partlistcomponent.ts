@@ -35,9 +35,14 @@ export class Partlistcomponent {
   isShowFilter: boolean = false;
   dataSource: Part[] = [];
   searchFormControl = new FormControl('', []);
+  partNumber: string = '';
 
   ngOnInit(): void {
     this.FetchPartData();
+  }
+
+  onSearch() {
+    console.log('Input value:', this.partNumber);
   }
 
   async FetchPartData() {

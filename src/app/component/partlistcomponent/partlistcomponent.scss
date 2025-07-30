@@ -25,6 +25,7 @@
 
 .filter-item {
     flex:auto;
+    align-items: center;
     display: flex;
     margin-left: 4px;
     height: 60px;
@@ -33,4 +34,12 @@
 .search-input {
     height: 20px;
     align-self: center;
+    margin-left: 14px;
+    margin-right: 14px;
+}
+
+.search-button {
+    margin-left: 14px;
+    margin-right: 14px;
+    height: 25px;
 }
