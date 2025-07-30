@@ -1,9 +1,4 @@
-<div class="table-area">
-  <!-- <div class="ml-2 filter-item">
-   
-
-    <button class="search-button" matButton="elevated">Log in</button>
-  </div> -->
+<form class="table-area" [formGroup]="loginForm">
   <mat-card class="card-body" appearance="outlined">
     <mat-card-header class="card-title">
       <mat-card-title>Login</mat-card-title>
@@ -13,7 +8,7 @@
         matInput
         type="text"
         placeholder="Username or email"
-        [(ngModel)]="userName"
+        formControlName="userName"
       />
     </mat-form-field>
     <mat-form-field class="input-field">
@@ -21,11 +16,11 @@
         matInput
         type="text"
         placeholder="Password"
-        [(ngModel)]="password"
+        formControlName="password"
       />
     </mat-form-field>
     <mat-card-actions class="button-field">
       <button matButton="filled" (click)="onClickLogin()">Log in</button>
     </mat-card-actions>
   </mat-card>
-</div>
+</form>
