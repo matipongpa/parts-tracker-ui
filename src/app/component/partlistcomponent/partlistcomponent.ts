@@ -35,18 +35,30 @@ export class Partlistcomponent {
   isShowFilter: boolean = false;
   dataSource: Part[] = [];
   searchFormControl = new FormControl('', []);
+  //ngModel
   partNumber: string = '';
+  value: string = '';
 
   ngOnInit(): void {
     this.FetchPartData();
   }
 
-  onSearch() {
-    console.log('Input value:', this.partNumber);
+  async onSearch() {
+    this.api.getPartswithParam(this.partNumber, this.value).subscribe({
+      next: (data) => {
+        this.dataSource = data;
+      },
+      error: (error) => {
+        console.error('Error fetching data from API:', error);
+      },
+      complete: () => {
+        console.log('API call completed.');
+      },
+    });
   }
 
   async FetchPartData() {
-    this.api.getParts().subscribe({
+    this.api.getAllParts().subscribe({
       next: (data) => {
         this.dataSource = data;
       },
@@ -61,7 +73,7 @@ export class Partlistcomponent {
 
   onClickFilter() {
     this.isShowFilter = !this.isShowFilter;
-    console.log('isShow', this.isShowFilter);
+    this.FetchPartData();
   }
 
   displayedColumns: string[] = [

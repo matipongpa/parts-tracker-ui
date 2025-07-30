@@ -15,9 +15,19 @@ export class Api {
     'Content-Type': 'application/json', // HttpClient usually defaults to this for JSON bodies
   });
 
-  getParts(): Observable<Part[]> {
+  getAllParts(): Observable<Part[]> {
     return this.http.get<Part[]>(`${this.apiUrl}/part`, {
       headers: this.headers,
+    });
+  }
+
+  getPartswithParam(partNumber: string, value: string): Observable<Part[]> {
+    return this.http.get<Part[]>(`${this.apiUrl}/part`, {
+      headers: this.headers,
+      params: {
+        partNumber: partNumber,
+        value: value,
+      },
     });
   }
 }
