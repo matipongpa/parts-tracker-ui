@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatTableModule } from '@angular/material/table';
 import { Api } from '../../core/service/api';
 import { Part } from '../../core/module/part.model';
@@ -14,7 +14,7 @@ import { CommonModule } from '@angular/common';
  * @title Basic use of `<table mat-table>`
  */
 @Component({
-  selector: 'part-list-component',
+  selector: 'app-part-list-component',
   styleUrl: 'partlistcomponent.scss',
   templateUrl: 'partlistcomponent.html',
   imports: [
@@ -29,15 +29,15 @@ import { CommonModule } from '@angular/common';
     CommonModule,
   ],
 })
-export class Partlistcomponent {
-  constructor(private api: Api) {}
+export class Partlistcomponent implements OnInit {
+  api = inject(Api);
 
-  isShowFilter: boolean = false;
+  isShowFilter = false;
   dataSource: Part[] = [];
   searchFormControl = new FormControl('', []);
   //ngModel
-  partNumber: string = '';
-  value: string = '';
+  partNumber = '';
+  value = '';
 
   ngOnInit(): void {
     this.FetchPartData();

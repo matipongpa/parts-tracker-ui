@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
-import { Partlistcomponent } from './partlistcomponent/partlistcomponent';
+import { Partlistcomponent } from './component/partlistcomponent/partlistcomponent';
+import { Logincomponent } from './component/logincomponent/logincomponent';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'parts', pathMatch: 'full' },
+  { path: '', redirectTo: 'log-in', pathMatch: 'full' },
   { path: 'parts', component: Partlistcomponent },
+  { path: 'log-in', component: Logincomponent },
 ];

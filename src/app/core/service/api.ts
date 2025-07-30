@@ -1,5 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+
 import { Part } from '../module/part.model';
 import { Observable } from 'rxjs';
 
@@ -9,7 +10,7 @@ import { Observable } from 'rxjs';
 export class Api {
   private apiUrl = 'http://localhost:8080/api';
 
-  constructor(private http: HttpClient) {}
+  http = inject(HttpClient);
 
   headers = new HttpHeaders({
     'Content-Type': 'application/json', // HttpClient usually defaults to this for JSON bodies
