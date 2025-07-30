@@ -8,7 +8,15 @@
       [ngStyle]="isShowFilter ? null : { display: 'none' }"
       class="ml-2 filter-item"
     >
-      <input class="search-input" type="email" placeholder="Ex. Part number" />
+      <input
+        class="search-input"
+        type="email"
+        placeholder="Ex. Part number"
+        [(ngModel)]="partNumber"
+      />
+      <button class="search-button" matButton="elevated" (click)="onSearch()">
+        Search
+      </button>
     </div>
   </div>
   <table
