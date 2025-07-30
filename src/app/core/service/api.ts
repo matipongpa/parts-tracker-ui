@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { Part } from '../module/part.model';
 import { Observable } from 'rxjs';
+import { Token, User } from '../module/user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -12,19 +13,31 @@ export class Api {
 
   http = inject(HttpClient);
 
-  headers = new HttpHeaders({
-    'Content-Type': 'application/json', // HttpClient usually defaults to this for JSON bodies
-  });
+  getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    });
+  }
+
+  postLogin(user: User): Observable<Token> {
+    return this.http.post<Token>(`${this.apiUrl}/login`, user, {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+      }),
+    });
+  }
 
   getAllParts(): Observable<Part[]> {
     return this.http.get<Part[]>(`${this.apiUrl}/part`, {
-      headers: this.headers,
+      headers: this.getHeaders(),
     });
   }
 
   getPartswithParam(partNumber: string, value: string): Observable<Part[]> {
     return this.http.get<Part[]>(`${this.apiUrl}/part`, {
-      headers: this.headers,
+      headers: this.getHeaders(),
       params: {
         partNumber: partNumber,
         value: value,
