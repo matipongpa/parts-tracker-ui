@@ -1,0 +1,53 @@
+.header-area {
+    display: flex;
+    flex: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.table-area {
+    display: flex;
+    flex: auto;
+    flex-direction: column;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.filter-tab {
+    display: flex;
+    flex:auto;
+    flex-direction: row;
+    align-items: center;
+    border-bottom: 2px solid black;
+    height: 60px;
+}
+
+.filter-tab-no-border {
+    display: flex;
+    flex:auto;
+    flex-direction: row;
+    align-items: center;
+    height: 60px;
+}
+
+.filter-item {
+    flex:auto;
+    align-items: center;
+    display: flex;
+    margin-left: 4px;
+    height: 60px;
+}
+
+.search-input {
+    height: 20px;
+    align-self: center;
+    margin-left: 14px;
+    margin-right: 14px;
+}
+
+.search-button {
+    margin-left: 14px;
+    margin-right: 14px;
+    height: 25px;
+}
