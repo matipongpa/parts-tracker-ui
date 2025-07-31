@@ -9,6 +9,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { Profilecomponent } from '../profilecomponent/profilecomponent';
 
 /**
  * @title Basic use of `<table mat-table>`
@@ -27,11 +30,12 @@ import { CommonModule } from '@angular/common';
     MatButtonModule,
     MatIconModule,
     CommonModule,
+    Profilecomponent,
   ],
 })
 export class Partlistcomponent implements OnInit {
   api = inject(Api);
-
+  router = inject(Router);
   isShowFilter = false;
   dataSource: Part[] = [];
   searchFormControl = new FormControl('', []);
@@ -64,6 +68,11 @@ export class Partlistcomponent implements OnInit {
       },
       error: (error) => {
         console.error('Error fetching data from API:', error);
+        if (
+          (error as HttpErrorResponse).status === HttpStatusCode.Unauthorized
+        ) {
+          this.router.navigate(['/login']);
+        }
       },
       complete: () => {
         console.log('API call completed.');
