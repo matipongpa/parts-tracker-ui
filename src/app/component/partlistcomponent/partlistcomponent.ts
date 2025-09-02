@@ -12,10 +12,14 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Profilecomponent } from '../profilecomponent/profilecomponent';
+import { PageEvent, MatPaginatorModule } from '@angular/material/paginator';
+import { count } from 'rxjs';
 
 /**
  * @title Basic use of `<table mat-table>`
  */
+
+const defaultPageIndex = 0;
 @Component({
   selector: 'app-part-list-component',
   styleUrl: 'partlistcomponent.scss',
@@ -31,40 +35,76 @@ import { Profilecomponent } from '../profilecomponent/profilecomponent';
     MatIconModule,
     CommonModule,
     Profilecomponent,
+    MatPaginatorModule,
   ],
 })
 export class Partlistcomponent implements OnInit {
   api = inject(Api);
   router = inject(Router);
+
   isShowFilter = false;
   dataSource: Part[] = [];
   searchFormControl = new FormControl('', []);
   //ngModel
-  partNumber = '';
+  pcbList = '';
   value = '';
+
+  length = 50;
+  pageSize = 10;
+  pageIndex = 0;
+  pageSizeOptions = [10, 100];
+  showPageSizeOption = true;
+
+  handlePageEvent(e: PageEvent) {
+    this.pageSize = e.pageSize;
+    this.pageIndex = e.pageIndex;
+    this.api
+      .getParts(this.pcbList, this.value, this.pageIndex, this.pageSize)
+      .subscribe({
+        next: (res) => {
+          this.dataSource = res.list;
+          this.length = res.count;
+        },
+        error: (error) => {
+          console.error('Error fetching data from API:', error);
+          if (
+            (error as HttpErrorResponse).status === HttpStatusCode.Unauthorized
+          ) {
+            this.router.navigate(['/login']);
+          }
+        },
+        complete: () => {
+          console.log('API call completed.');
+        },
+      });
+  }
 
   ngOnInit(): void {
     this.FetchPartData();
   }
 
   async onSearch() {
-    this.api.getPartswithParam(this.partNumber, this.value).subscribe({
-      next: (data) => {
-        this.dataSource = data;
-      },
-      error: (error) => {
-        console.error('Error fetching data from API:', error);
-      },
-      complete: () => {
-        console.log('API call completed.');
-      },
-    });
+    this.api
+      .getParts(this.pcbList, this.value, defaultPageIndex, this.pageSize)
+      .subscribe({
+        next: (res) => {
+          this.dataSource = res.list;
+          this.length = res.count;
+        },
+        error: (error) => {
+          console.error('Error fetching data from API:', error);
+        },
+        complete: () => {
+          console.log('API call completed.');
+        },
+      });
   }
 
   async FetchPartData() {
-    this.api.getAllParts().subscribe({
-      next: (data) => {
-        this.dataSource = data;
+    this.api.getParts().subscribe({
+      next: (res) => {
+        this.dataSource = res.list;
+        this.length = res.count;
       },
       error: (error) => {
         console.error('Error fetching data from API:', error);
@@ -86,7 +126,7 @@ export class Partlistcomponent implements OnInit {
   }
 
   displayedColumns: string[] = [
-    'id',
+    'pcb-ref',
     'part_number',
     'description',
     'type',

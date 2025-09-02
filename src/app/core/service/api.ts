@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { Part } from '../module/part.model';
+import { Part, PartResponse } from '../module/part.model';
 import { Observable } from 'rxjs';
 import { Token, User } from '../module/user.model';
 
@@ -29,18 +29,19 @@ export class Api {
     });
   }
 
-  getAllParts(): Observable<Part[]> {
-    return this.http.get<Part[]>(`${this.apiUrl}/part`, {
-      headers: this.getHeaders(),
-    });
-  }
-
-  getPartswithParam(partNumber: string, value: string): Observable<Part[]> {
-    return this.http.get<Part[]>(`${this.apiUrl}/part`, {
+  getParts(
+    pcbRef?: string,
+    value?: string,
+    page?: number,
+    pageSize?: number
+  ): Observable<PartResponse> {
+    return this.http.get<PartResponse>(`${this.apiUrl}/part`, {
       headers: this.getHeaders(),
       params: {
-        partNumber: partNumber,
-        value: value,
+        pcb_ref: pcbRef ?? '',
+        value: value ?? '',
+        page: page ?? 0,
+        page_size: pageSize ?? 10,
       },
     });
   }
