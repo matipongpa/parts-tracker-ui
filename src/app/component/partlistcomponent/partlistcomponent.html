@@ -15,7 +15,14 @@
         class="search-input"
         type="text"
         placeholder="Pcb ref."
-        [(ngModel)]="pcbList"
+        [(ngModel)]="pcbRef"
+      />
+
+      <input
+        class="search-input"
+        type="text"
+        placeholder="PartNumber"
+        [(ngModel)]="partNumber"
       />
 
       <input
@@ -23,6 +30,20 @@
         type="text"
         placeholder="Value"
         [(ngModel)]="value"
+      />
+
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Description"
+        [(ngModel)]="description"
+      />
+
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Type"
+        [(ngModel)]="type"
       />
 
       <button class="search-button" matButton="elevated" (click)="onSearch()">

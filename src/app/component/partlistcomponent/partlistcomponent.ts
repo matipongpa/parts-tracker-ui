@@ -46,8 +46,11 @@ export class Partlistcomponent implements OnInit {
   dataSource: Part[] = [];
   searchFormControl = new FormControl('', []);
   //ngModel
-  pcbList = '';
+  pcbRef = '';
   value = '';
+  description = '';
+  type = '';
+  partNumber = '';
 
   length = 50;
   pageSize = 10;
@@ -58,25 +61,7 @@ export class Partlistcomponent implements OnInit {
   handlePageEvent(e: PageEvent) {
     this.pageSize = e.pageSize;
     this.pageIndex = e.pageIndex;
-    this.api
-      .getParts(this.pcbList, this.value, this.pageIndex, this.pageSize)
-      .subscribe({
-        next: (res) => {
-          this.dataSource = res.list;
-          this.length = res.count;
-        },
-        error: (error) => {
-          console.error('Error fetching data from API:', error);
-          if (
-            (error as HttpErrorResponse).status === HttpStatusCode.Unauthorized
-          ) {
-            this.router.navigate(['/login']);
-          }
-        },
-        complete: () => {
-          console.log('API call completed.');
-        },
-      });
+    this.HandleGetPartParam(this.pageIndex, this.pageSize);
   }
 
   ngOnInit(): void {
@@ -84,20 +69,7 @@ export class Partlistcomponent implements OnInit {
   }
 
   async onSearch() {
-    this.api
-      .getParts(this.pcbList, this.value, defaultPageIndex, this.pageSize)
-      .subscribe({
-        next: (res) => {
-          this.dataSource = res.list;
-          this.length = res.count;
-        },
-        error: (error) => {
-          console.error('Error fetching data from API:', error);
-        },
-        complete: () => {
-          console.log('API call completed.');
-        },
-      });
+    this.HandleGetPartParam(defaultPageIndex, this.pageSize);
   }
 
   async FetchPartData() {
@@ -118,6 +90,31 @@ export class Partlistcomponent implements OnInit {
         console.log('API call completed.');
       },
     });
+  }
+
+  async HandleGetPartParam(pageIndex: number, pageSize: number) {
+    this.api
+      .getParts(
+        this.pcbRef,
+        this.partNumber,
+        this.value,
+        this.description,
+        this.type,
+        pageIndex,
+        pageSize
+      )
+      .subscribe({
+        next: (res) => {
+          this.dataSource = res.list;
+          this.length = res.count;
+        },
+        error: (error) => {
+          console.error('Error fetching data from API:', error);
+        },
+        complete: () => {
+          console.log('API call completed.');
+        },
+      });
   }
 
   onClickFilter() {
