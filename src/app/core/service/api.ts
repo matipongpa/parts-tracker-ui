@@ -31,7 +31,10 @@ export class Api {
 
   getParts(
     pcbRef?: string,
+    partNumber?: string,
     value?: string,
+    description?: string,
+    type?: string,
     page?: number,
     pageSize?: number
   ): Observable<PartResponse> {
@@ -39,7 +42,10 @@ export class Api {
       headers: this.getHeaders(),
       params: {
         pcb_ref: pcbRef ?? '',
+        part_number: partNumber ?? '',
         value: value ?? '',
+        description: description ?? '',
+        type: type ?? '',
         page: page ?? 0,
         page_size: pageSize ?? 10,
       },
