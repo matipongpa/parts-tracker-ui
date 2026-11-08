@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { request } from '@/lib/api/client';
 import { getAccessToken, setAccessToken } from '@/lib/api/session';
 import { installApiMock, jsonResponse } from '@/test/apiMock';
-import type { ApiMock } from '@/test/apiMock';
+import type { ApiMock, RecordedCall } from '@/test/apiMock';
 
 function bearer(init: RequestInit | undefined): string | null {
   return (init?.headers as Headers).get('Authorization');
@@ -98,5 +98,36 @@ describe('request: silent refresh', (): void => {
 
     expect(api.callsTo('/thing')[0]?.init?.credentials).toBe('same-origin');
     expect(api.callsTo('/auth/logout')[0]?.init?.credentials).toBe('include');
+  });
+});
+
+describe('request: multipart bodies', (): void => {
+  let api: ApiMock;
+
+  beforeEach((): void => {
+    api = installApiMock();
+  });
+
+  afterEach((): void => {
+    api.restore();
+  });
+
+  it('sends a FormData as is and replays the same form after a silent refresh', async (): Promise<void> => {
+    setAccessToken('expired');
+    api.on('POST', '/upload', (init: RequestInit | undefined): Response =>
+      bearer(init) === 'Bearer fresh' ? jsonResponse({ ok: true }) : jsonResponse({ error: 'Unauthorized' }, 401),
+    );
+    api.on('POST', '/auth/refresh', (): Response => jsonResponse({ token: 'fresh' }));
+    const form: FormData = new FormData();
+    form.append('file', new File(['x'], 'a.xlsx'));
+
+    await expect(request('/upload', { method: 'POST', body: form })).resolves.toEqual({ ok: true });
+
+    const calls: RecordedCall[] = api.callsTo('/upload');
+    expect(calls).toHaveLength(2);
+    for (const call of calls) {
+      expect(call.init?.body).toBe(form);
+      expect((call.init?.headers as Headers).has('Content-Type')).toBe(false);
+    }
   });
 });
