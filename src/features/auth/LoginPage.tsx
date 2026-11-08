@@ -5,8 +5,9 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { AuthLayout } from '@/features/auth/AuthLayout';
-import { ApiError } from '@/lib/api/client';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { SessionLoading } from '@/features/auth/SessionLoading';
+import { useAuth } from '@/features/auth/AuthContext';
+import { ApiError } from '@/lib/api/errors';
 import type { Location, NavigateFunction } from 'react-router-dom';
 import type { FormEvent, ReactElement } from 'react';
 
@@ -32,7 +33,7 @@ function describeError(error: unknown): string {
 }
 
 export function LoginPage(): ReactElement {
-  const { isAuthenticated, login } = useAuth();
+  const { status, login } = useAuth();
   const navigate: NavigateFunction = useNavigate();
   const location: Location = useLocation();
 
@@ -46,7 +47,8 @@ export function LoginPage(): ReactElement {
   const from: Location | undefined = (location.state as LoginLocationState | null)?.from;
   // Keep the query string so a deep-linked search survives the login round-trip.
   const destination: string = from ? `${from.pathname}${from.search}` : '/parts';
-  if (isAuthenticated) return <Navigate to={destination} replace />;
+  if (status === 'loading') return <SessionLoading />;
+  if (status === 'authenticated') return <Navigate to={destination} replace />;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();

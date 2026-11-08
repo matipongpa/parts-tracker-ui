@@ -1,14 +1,31 @@
+import { useState } from 'react';
 import { CircuitBoard, LogOut, Moon, Sun } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { ApiError } from '@/lib/api/errors';
 import type { ReactElement } from 'react';
 
 export function AppShell(): ReactElement {
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const [loggingOut, setLoggingOut] = useState<boolean>(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+
+  async function handleLogout(): Promise<void> {
+    setLoggingOut(true);
+    setLogoutError(null);
+    try {
+      await logout();
+      // On success the session is gone and ProtectedRoute unmounts this shell.
+    } catch (error: unknown) {
+      // The refresh cookie is still live, so stay signed in rather than pretend we logged out.
+      setLogoutError(error instanceof ApiError ? error.message : 'Could not log out. Please try again.');
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -30,7 +47,12 @@ export function AppShell(): ReactElement {
             >
               {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
             </Button>
-            <Button variant="ghost" size="sm" onClick={logout}>
+            {logoutError && (
+              <span role="alert" className="mr-2 text-sm text-danger">
+                {logoutError}
+              </span>
+            )}
+            <Button variant="ghost" size="sm" loading={loggingOut} onClick={(): void => void handleLogout()}>
               <LogOut className="size-4" aria-hidden="true" />
               <span className="hidden sm:inline">Log out</span>
             </Button>

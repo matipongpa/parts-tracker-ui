@@ -3,7 +3,7 @@ import { SearchX } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { TypeBadge } from '@/features/parts/TypeBadge';
 import { cn } from '@/lib/cn';
-import type { Part } from '@/lib/types';
+import type { Part } from '@/features/parts/types';
 import type { ReactElement } from 'react';
 
 const HEADERS: ReadonlyArray<string> = ['Part number', 'PCB ref.', 'Description', 'Type', 'Value'];

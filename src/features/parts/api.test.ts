@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiError } from '@/lib/api/client';
-import { buildPartsParams, fetchParts } from '@/lib/api/parts';
-import { setToken } from '@/lib/auth/tokenStorage';
-import type { PartsPage, PartsQuery } from '@/lib/types';
+import { buildPartsParams, fetchParts } from '@/features/parts/api';
+import { ApiError } from '@/lib/api/errors';
+import { setAccessToken } from '@/lib/api/session';
+import type { PartsQuery, PartsResult } from '@/features/parts/types';
 import type { Mock } from 'vitest';
 
 const QUERY: PartsQuery = {
@@ -39,12 +39,12 @@ describe('fetchParts', (): void => {
   });
 
   it('sends the bearer token and returns parsed parts', async (): Promise<void> => {
-    setToken('jwt-123');
+    setAccessToken('jwt-123');
     fetchMock.mockResolvedValue(
       jsonResponse({ list: [{ id: '7', part_number: 'LM358', type: 'Integrated circuit (IC)' }], count: 1 }),
     );
 
-    const page: PartsPage = await fetchParts(QUERY);
+    const page: PartsResult = await fetchParts(QUERY);
 
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     expect(String(url)).toContain('/part?part_number=LM358&type=Resistor&page=2&page_size=25');

@@ -1,5 +1,4 @@
 import { useEffect, useMemo } from 'react';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -7,10 +6,10 @@ import { Button } from '@/components/ui/Button';
 import { Pagination } from '@/features/parts/Pagination';
 import { PartsFilters } from '@/features/parts/PartsFilters';
 import { PartsTable } from '@/features/parts/PartsTable';
-import { EMPTY_FILTERS, countActiveFilters, parseQuery, resolveEffectiveQuery, toSearchParams } from '@/features/parts/query';
+import { EMPTY_FILTERS, countActiveFilters, parseQuery, resolveEffectiveQuery, toSearchParams } from '@/features/parts/searchParams';
+import { usePartsSearch } from '@/features/parts/usePartsSearch';
 import { useDebounce } from '@/hooks/useDebounce';
-import { fetchParts } from '@/lib/api/parts';
-import type { PartFilters, PartsPage as PartsPageData, PartsQuery } from '@/lib/types';
+import type { PartFilters, PartsQuery, PartsResult } from '@/features/parts/types';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
 
@@ -27,14 +26,10 @@ export function PartsPage(): ReactElement {
   const debouncedQuery: PartsQuery = useDebounce<PartsQuery>(query, SEARCH_DEBOUNCE_MS);
   const effectiveQuery: PartsQuery = resolveEffectiveQuery(query, debouncedQuery);
 
-  const result: UseQueryResult<PartsPageData> = useQuery<PartsPageData>({
-    queryKey: ['parts', effectiveQuery],
-    queryFn: ({ signal }: { signal: AbortSignal }): Promise<PartsPageData> => fetchParts(effectiveQuery, signal),
-    placeholderData: keepPreviousData,
-  });
+  const result: UseQueryResult<PartsResult> = usePartsSearch(effectiveQuery);
 
   const total: number = result.data?.count ?? 0;
-  const parts: PartsPageData['list'] = result.data?.list ?? [];
+  const parts: PartsResult['list'] = result.data?.list ?? [];
   const filters: PartFilters = query;
   const activeFilters: number = countActiveFilters(filters);
   const typing: boolean = effectiveQuery !== query;

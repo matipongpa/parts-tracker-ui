@@ -1,5 +1,7 @@
-import { ApiError, request } from '@/lib/api/client';
-import type { Part, PartsPage, PartsQuery } from '@/lib/types';
+import { request } from '@/lib/api/client';
+import { ApiError } from '@/lib/api/errors';
+import { isRecord } from '@/lib/api/guards';
+import type { Part, PartsQuery, PartsResult } from '@/features/parts/types';
 
 /** Builds the search query string, omitting empty filters to keep URLs (and server cache keys) tidy. */
 export function buildPartsParams(query: PartsQuery): URLSearchParams {
@@ -18,10 +20,6 @@ export function buildPartsParams(query: PartsQuery): URLSearchParams {
   params.set('page', String(query.page));
   params.set('page_size', String(query.pageSize));
   return params;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 function str(value: unknown): string {
@@ -45,7 +43,7 @@ function toPart(value: unknown): Part | null {
 }
 
 /** Narrows the payload; Go serializes an empty result as `"list": null`, which becomes `[]`. */
-function toPartsPage(payload: unknown): PartsPage {
+function toPartsResult(payload: unknown): PartsResult {
   if (!isRecord(payload) || typeof payload.count !== 'number') {
     throw new ApiError(502, 'Unexpected response from the server.');
   }
@@ -54,7 +52,7 @@ function toPartsPage(payload: unknown): PartsPage {
   return { list, count: payload.count };
 }
 
-export async function fetchParts(query: PartsQuery, signal?: AbortSignal): Promise<PartsPage> {
+export async function fetchParts(query: PartsQuery, signal?: AbortSignal): Promise<PartsResult> {
   const payload: unknown = await request('/part', { params: buildPartsParams(query), signal });
-  return toPartsPage(payload);
+  return toPartsResult(payload);
 }

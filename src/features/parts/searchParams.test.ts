@@ -7,8 +7,8 @@ import {
   parseQuery,
   resolveEffectiveQuery,
   toSearchParams,
-} from '@/features/parts/query';
-import type { PartsQuery } from '@/lib/types';
+} from '@/features/parts/searchParams';
+import type { PartsQuery } from '@/features/parts/types';
 
 const BASE: PartsQuery = { ...EMPTY_FILTERS, page: 0, pageSize: DEFAULT_PAGE_SIZE };
 

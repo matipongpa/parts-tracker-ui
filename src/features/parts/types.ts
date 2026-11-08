@@ -11,7 +11,7 @@ export interface Part {
   value: string;
 }
 
-export interface PartsPage {
+export interface PartsResult {
   list: Part[];
   count: number;
 }
@@ -28,21 +28,4 @@ export interface PartsQuery extends PartFilters {
   /** Zero-based, matching the backend. */
   page: number;
   pageSize: number;
-}
-
-export interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  token: string;
-}
-
-export interface RegisterInput {
-  username: string;
-  password: string;
-  firstName: string;
-  surname: string;
-  inviteCode: string;
 }

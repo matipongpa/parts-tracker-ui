@@ -3,7 +3,7 @@ import { Binary, Cpu, Hash, Search, Tag, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { cn } from '@/lib/cn';
-import type { PartFilters } from '@/lib/types';
+import type { PartFilters } from '@/features/parts/types';
 import type { ChangeEvent, ReactElement } from 'react';
 
 interface PartsFiltersProps {

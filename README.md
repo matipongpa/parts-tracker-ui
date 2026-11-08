@@ -17,7 +17,7 @@ The API URL defaults to `http://localhost:8080/api`. Override it with a `.env.lo
 VITE_API_URL=http://localhost:8080/api
 ```
 
-The dev server is pinned to port **4200** (`strictPort`) because the backend's CORS allow-list (`internal/platform/httpx/cors.go`) only contains `http://localhost:4200`. If you deploy the UI elsewhere, add that origin to the backend.
+The dev server is pinned to port **4200** (`strictPort`) because the backend's CORS allow-list defaults to `http://localhost:4200`. If you deploy the UI elsewhere, add its origin to the backend's `CORS_ALLOWED_ORIGINS`. The refresh cookie also needs `COOKIE_SECURE=false` on the backend for plain-HTTP local dev, and `COOKIE_SAMESITE=none` (with HTTPS) if the UI and API are on different sites; see the backend README.
 
 ## Scripts
 
@@ -31,14 +31,15 @@ The dev server is pinned to port **4200** (`strictPort`) because the backend's C
 
 ## Structure
 
+Organised by feature: everything for a feature (API calls, types, hooks, components, tests) lives in its folder. `lib/` and `components/` are shared and must not import from `features/`.
+
 ```
 src/
   components/ui/       Button, TextField, Skeleton: small, token-driven primitives
   components/layout/   AppShell (header, theme toggle, log out)
-  features/auth/       LoginPage, RegisterPage, shared AuthLayout
-  features/parts/      PartsPage + filters, table, pagination, and their pure logic (query, pageItems, typeTone)
-  lib/api/             fetch client (typed errors, runtime guards), auth + parts endpoints
-  lib/auth/            token storage, AuthContext, ProtectedRoute
+  features/auth/       api, types, AuthContext (session restore), ProtectedRoute, LoginPage, RegisterPage
+  features/parts/      api, types, usePartsSearch, searchParams (URL <-> filters), PartsPage, table, pagination
+  lib/api/             fetch client with silent token refresh, in-memory session, typed errors, runtime guards
   hooks/               useDebounce, useTheme
   index.css            design tokens (light/dark) mapped into Tailwind
 ```
@@ -47,7 +48,7 @@ src/
 
 - **Filters and paging live in the URL** (`/parts?pn=LM358&type=Resistor&page=2&size=50`), so searches are shareable and Back/Forward work. `page` is 1-based in the URL, zero-based on the API.
 - **Search is debounced** (300 ms); paging is immediate. Previous results stay on screen (dimmed) while the next page loads.
-- **Auth:** the JWT is kept in `localStorage` under `token` (same key as the old Angular app). Any `401` from the API clears it and returns you to `/login`, then back to the page you were on.
+- **Auth:** the short-lived access token is kept in memory only (`lib/api/session.ts`), never in `localStorage`. The long-lived credential is an `httpOnly` refresh cookie set by the backend, which page scripts cannot read. On every reload `AuthProvider` calls `POST /auth/refresh` to turn the cookie back into an access token (a "Restoring your session…" state shows meanwhile). A `401` on any request triggers one refresh and a retry; if that fails you are returned to `/login`, then back to the page you were on. Logging out calls `POST /auth/logout` so the server drops the cookie; if that call fails you stay signed in rather than appear logged out with a live cookie. Sessions are per tab: logging out in one tab does not end another tab until it refreshes. The old `localStorage` token is deleted on first load.
 - **Registration:** `/register` needs the team invite code, which the backend checks against `REGISTER_INVITE_CODE`. If that variable is unset the backend answers 403 "Registration is closed". After a successful sign-up the page logs you in.
 - **Theming:** components use semantic tokens (`bg-surface`, `text-muted`, …) defined in `src/index.css`; light/dark is a `dark` class on `<html>`, set before first paint from the saved or system preference.
 

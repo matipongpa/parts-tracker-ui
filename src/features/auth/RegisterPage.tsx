@@ -5,9 +5,10 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { AuthLayout } from '@/features/auth/AuthLayout';
-import { register } from '@/lib/api/auth';
-import { ApiError } from '@/lib/api/client';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { SessionLoading } from '@/features/auth/SessionLoading';
+import { register } from '@/features/auth/api';
+import { useAuth } from '@/features/auth/AuthContext';
+import { ApiError } from '@/lib/api/errors';
 import type { NavigateFunction } from 'react-router-dom';
 import type { FormEvent, ReactElement } from 'react';
 
@@ -59,7 +60,7 @@ function describeFailure(error: unknown): { field?: keyof FormValues; message: s
 }
 
 export function RegisterPage(): ReactElement {
-  const { isAuthenticated, login } = useAuth();
+  const { status, login } = useAuth();
   const navigate: NavigateFunction = useNavigate();
 
   const [values, setValues] = useState<FormValues>(EMPTY_FORM);
@@ -68,7 +69,8 @@ export function RegisterPage(): ReactElement {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  if (isAuthenticated) return <Navigate to="/parts" replace />;
+  if (status === 'loading') return <SessionLoading />;
+  if (status === 'authenticated') return <Navigate to="/parts" replace />;
 
   function bind(key: keyof FormValues): {
     value: string;

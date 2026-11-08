@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { getPageItems } from '@/features/parts/pageItems';
-import { PAGE_SIZES } from '@/features/parts/query';
+import { PAGE_SIZES } from '@/features/parts/searchParams';
 import { cn } from '@/lib/cn';
 import type { PageItem } from '@/features/parts/pageItems';
 import type { ChangeEvent, ReactElement } from 'react';

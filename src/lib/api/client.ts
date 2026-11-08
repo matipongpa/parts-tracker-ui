@@ -1,32 +1,22 @@
-import { getToken } from '@/lib/auth/tokenStorage';
-
-const API_URL: string = (import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api').replace(/\/+$/, '');
-
-export class ApiError extends Error {
-  readonly status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-  }
-}
-
-export function isUnauthorized(error: unknown): boolean {
-  return error instanceof ApiError && error.status === 401;
-}
+import { API_URL } from '@/lib/api/config';
+import { ApiError, networkError } from '@/lib/api/errors';
+import { isRecord } from '@/lib/api/guards';
+import { getAccessToken, refreshAccessToken } from '@/lib/api/session';
 
 export interface RequestOptions {
   method?: 'GET' | 'POST';
   body?: unknown;
   params?: URLSearchParams;
-  /** Attach the bearer token. Defaults to true; login turns it off. */
+  /** Attach the bearer token, and on a 401 refresh it once and retry. Defaults to true; login turns it off. */
   auth?: boolean;
+  /** Send and accept cookies (the httpOnly refresh cookie). Only the login and logout calls need it. */
+  withCookies?: boolean;
   signal?: AbortSignal;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+interface Reply {
+  response: Response;
+  payload: unknown;
 }
 
 function extractErrorMessage(payload: unknown, fallback: string): string {
@@ -44,17 +34,12 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-/**
- * Performs a request and returns the decoded JSON as `unknown`; callers narrow it
- * with a type guard so a backend contract change fails loudly instead of silently.
- */
-export async function request(path: string, options: RequestOptions = {}): Promise<unknown> {
-  const { method = 'GET', body, params, auth = true, signal } = options;
+async function send(path: string, options: RequestOptions, token: string | null): Promise<Reply> {
+  const { method = 'GET', body, params, withCookies = false, signal } = options;
 
   const query: string = params && params.size > 0 ? `?${params.toString()}` : '';
   const headers: Headers = new Headers({ Accept: 'application/json' });
   if (body !== undefined) headers.set('Content-Type', 'application/json');
-  const token: string | null = auth ? getToken() : null;
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
   let response: Response;
@@ -63,16 +48,36 @@ export async function request(path: string, options: RequestOptions = {}): Promi
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      credentials: withCookies ? 'include' : 'same-origin',
       signal,
     });
   } catch (error: unknown) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
-    throw new ApiError(0, 'Cannot reach the server. Check your connection and try again.');
+    throw networkError();
   }
+  return { response, payload: await readJson(response) };
+}
 
-  const payload: unknown = await readJson(response);
+function unwrap({ response, payload }: Reply): unknown {
   if (!response.ok) {
     throw new ApiError(response.status, extractErrorMessage(payload, `Request failed (${response.status})`));
   }
   return payload;
+}
+
+/**
+ * Performs a request and returns the decoded JSON as `unknown`; callers narrow it
+ * with a type guard so a backend contract change fails loudly instead of silently.
+ */
+export async function request(path: string, options: RequestOptions = {}): Promise<unknown> {
+  const { auth = true } = options;
+
+  let reply: Reply = await send(path, options, auth ? getAccessToken() : null);
+  if (auth && reply.response.status === 401) {
+    // The access token only lives for minutes and is gone after a reload: trade the refresh
+    // cookie for a new one and replay the request once. If that fails the 401 stands.
+    const fresh: string | null = await refreshAccessToken();
+    if (fresh !== null) reply = await send(path, options, fresh);
+  }
+  return unwrap(reply);
 }

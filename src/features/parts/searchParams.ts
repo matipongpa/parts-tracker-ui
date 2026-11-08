@@ -1,4 +1,4 @@
-import type { PartFilters, PartsQuery } from '@/lib/types';
+import type { PartFilters, PartsQuery } from '@/features/parts/types';
 
 /** The backend caps page_size at 100. */
 export const PAGE_SIZES: ReadonlyArray<number> = [10, 25, 50, 100];

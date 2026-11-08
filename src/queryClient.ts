@@ -1,7 +1,7 @@
 import { QueryCache, QueryClient } from '@tanstack/react-query';
 
-import { ApiError, isUnauthorized } from '@/lib/api/client';
-import { clearToken } from '@/lib/auth/tokenStorage';
+import { ApiError, isUnauthorized } from '@/lib/api/errors';
+import { clearSession } from '@/lib/api/session';
 
 /** Retry flaky network/5xx failures a couple of times, but never 4xx (they won't fix themselves). */
 export function shouldRetry(failureCount: number, error: unknown): boolean {
@@ -12,9 +12,10 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
 export function createQueryClient(): QueryClient {
   return new QueryClient({
     queryCache: new QueryCache({
-      // Token expired or revoked: dropping it flips AuthProvider, and ProtectedRoute redirects to /login.
+      // request() already tried to refresh once, so a 401 here means the session is over: dropping the
+      // in-memory token flips AuthProvider, and ProtectedRoute redirects to /login.
       onError: (error: unknown): void => {
-        if (isUnauthorized(error)) clearToken();
+        if (isUnauthorized(error)) clearSession();
       },
     }),
     defaultOptions: {
