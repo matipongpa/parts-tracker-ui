@@ -1,59 +1,55 @@
-# PartListUi
+# parts-tracker-ui
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.1.
+Web UI for [parts-tracker-backend](../parts-tracker-backend): log in, then search and browse electronic parts across projects and PCBs.
 
-## Development server
+**Stack:** React 19 · TypeScript (strict) · Vite · React Router · TanStack Query · Tailwind CSS v4 · Vitest + Testing Library.
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Run it
 
 ```bash
-ng generate component component-name
+npm install
+npm run dev        # http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+The API URL defaults to `http://localhost:8080/api`. Override it with a `.env.local` file:
 
 ```bash
-ng generate --help
+VITE_API_URL=http://localhost:8080/api
 ```
 
-## Building
+The dev server is pinned to port **4200** (`strictPort`) because the backend's CORS allow-list (`internal/platform/httpx/cors.go`) only contains `http://localhost:4200`. If you deploy the UI elsewhere, add that origin to the backend.
 
-To build the project run:
+## Scripts
 
-```bash
-ng build
+| Script | What it does |
+|---|---|
+| `npm run dev` | dev server with HMR |
+| `npm run build` | typecheck, then production build to `dist/` |
+| `npm run typecheck` | `tsc` only |
+| `npm run lint` | ESLint (bans `any`, requires explicit return types) |
+| `npm test` | unit and component tests (single file: `npx vitest run src/features/parts`) |
+
+## Structure
+
+```
+src/
+  components/ui/       Button, TextField, Skeleton: small, token-driven primitives
+  components/layout/   AppShell (header, theme toggle, log out)
+  features/auth/       LoginPage, shared AuthLayout
+  features/parts/      PartsPage + filters, table, pagination, and their pure logic (query, pageItems, typeTone)
+  lib/api/             fetch client (typed errors, runtime guards), auth + parts endpoints
+  lib/auth/            token storage, AuthContext, ProtectedRoute
+  hooks/               useDebounce, useTheme
+  index.css            design tokens (light/dark) mapped into Tailwind
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Behaviour worth knowing
 
-## Running unit tests
+- **Filters and paging live in the URL** (`/parts?pn=LM358&type=Resistor&page=2&size=50`), so searches are shareable and Back/Forward work. `page` is 1-based in the URL, zero-based on the API.
+- **Search is debounced** (300 ms); paging is immediate. Previous results stay on screen (dimmed) while the next page loads.
+- **Auth:** the JWT is kept in `localStorage` under `token` (same key as the old Angular app). Any `401` from the API clears it and returns you to `/login`, then back to the page you were on.
+- **Theming:** components use semantic tokens (`bg-surface`, `text-muted`, …) defined in `src/index.css`; light/dark is a `dark` class on `<html>`, set before first paint from the saved or system preference.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## Migration note
 
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+This replaced the Angular 20 + Angular Material app. The `docs/` folder still contains the **old Angular production build** and is untouched; it is not rebuilt from this code.
