@@ -54,6 +54,10 @@ src/
 - **Registration:** `/register` needs the team invite code, which the backend checks against `REGISTER_INVITE_CODE`. If that variable is unset the backend answers 403 "Registration is closed". After a successful sign-up the page logs you in.
 - **Theming:** components use semantic tokens (`bg-surface`, `text-muted`, …) defined in `src/index.css`; light/dark is a `dark` class on `<html>`, set before first paint from the saved or system preference.
 
+## Docker
+
+`Dockerfile` builds the bundle with `VITE_API_URL=/api` and serves it with nginx (`nginx.conf`: SPA fallback, `/api` proxied to the compose service `api`, 120 s read timeout for slow AI answers). It is built by `docker-compose.prod.yml` in `parts-tracker-backend`, which is what deploy-manager deploys; see that README.
+
 ## Migration note
 
 This replaced the Angular 20 + Angular Material app. The `docs/` folder still contains the **old Angular production build** and is untouched; it is not rebuilt from this code.
