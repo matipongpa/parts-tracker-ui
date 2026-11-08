@@ -4,7 +4,7 @@ import { isRecord } from '@/lib/api/guards';
 import { getAccessToken, refreshAccessToken } from '@/lib/api/session';
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'DELETE';
   body?: unknown;
   params?: URLSearchParams;
   /** Attach the bearer token, and on a 401 refresh it once and retry. Defaults to true; login turns it off. */

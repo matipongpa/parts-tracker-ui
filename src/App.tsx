@@ -2,6 +2,9 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppShell } from '@/components/layout/AppShell';
+import { AskLayout } from '@/features/assistant/AskLayout';
+import { AskPage } from '@/features/assistant/AskPage';
+import { HistoryEntryPage } from '@/features/assistant/HistoryEntryPage';
 import { AuthProvider } from '@/features/auth/AuthContext';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
@@ -20,6 +23,10 @@ export function App({ queryClient }: { queryClient: QueryClient }): ReactElement
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route path="/parts" element={<PartsPage />} />
+              <Route path="/ask" element={<AskLayout />}>
+                <Route index element={<AskPage />} />
+                <Route path=":id" element={<HistoryEntryPage />} />
+              </Route>
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/parts" replace />} />

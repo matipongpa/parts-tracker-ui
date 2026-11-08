@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 
 import type { Mock } from 'vitest';
 
-export type MockHandler = (init: RequestInit | undefined) => Response | Promise<Response>;
+export type MockHandler = (init: RequestInit | undefined, url: string) => Response | Promise<Response>;
 
 export interface RecordedCall {
   url: string;
@@ -11,8 +11,8 @@ export interface RecordedCall {
 
 export interface ApiMock {
   fetchMock: Mock<typeof fetch>;
-  /** Answers `METHOD path` (path matched against the end of the URL, query string ignored). */
-  on: (method: string, path: string, handler: MockHandler) => void;
+  /** Answers `METHOD path`. A string matches the end of the URL path (query ignored); a RegExp tests the whole path. A later `on` wins. */
+  on: (method: string, path: string | RegExp, handler: MockHandler) => void;
   /** Every request whose path ends with `path`, in order. */
   callsTo: (path: string) => RecordedCall[];
   restore: () => void;
@@ -31,7 +31,12 @@ function pathOf(url: string): string {
  * i.e. "no session cookie", which is what a first visit looks like.
  */
 export function installApiMock(): ApiMock {
-  const handlers: Map<string, MockHandler> = new Map<string, MockHandler>();
+  interface Route {
+    method: string;
+    matches: (path: string) => boolean;
+    handler: MockHandler;
+  }
+  const routes: Route[] = [];
   const calls: RecordedCall[] = [];
 
   const fetchMock: Mock<typeof fetch> = vi.fn<typeof fetch>((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -39,20 +44,19 @@ export function installApiMock(): ApiMock {
     calls.push({ url, init });
     const method: string = (init?.method ?? 'GET').toUpperCase();
     const path: string = pathOf(url);
-    for (const [key, handler] of handlers) {
-      const [handlerMethod, handlerPath] = key.split(' ');
-      if (handlerMethod === method && handlerPath !== undefined && path.endsWith(handlerPath)) {
-        return Promise.resolve(handler(init));
-      }
-    }
+    const route: Route | undefined = routes.find((candidate: Route): boolean => candidate.method === method && candidate.matches(path));
+    if (route) return Promise.resolve(route.handler(init, url));
     return Promise.resolve(jsonResponse({ error: `Unmocked ${method} ${path}` }, 500));
   });
   vi.stubGlobal('fetch', fetchMock);
 
   const mock: ApiMock = {
     fetchMock,
-    on: (method: string, path: string, handler: MockHandler): void => {
-      handlers.set(`${method.toUpperCase()} ${path}`, handler);
+    on: (method: string, path: string | RegExp, handler: MockHandler): void => {
+      const matches: (candidate: string) => boolean =
+        typeof path === 'string' ? (candidate: string): boolean => candidate.endsWith(path) : (candidate: string): boolean => path.test(candidate);
+      // Newest first, so a test can override the defaults installed below.
+      routes.unshift({ method: method.toUpperCase(), matches, handler });
     },
     callsTo: (path: string): RecordedCall[] => calls.filter((call: RecordedCall): boolean => pathOf(call.url).endsWith(path)),
     restore: (): void => {

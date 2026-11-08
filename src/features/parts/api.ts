@@ -26,7 +26,7 @@ function str(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
-function toPart(value: unknown): Part | null {
+export function toPart(value: unknown): Part | null {
   if (!isRecord(value) || typeof value.id !== 'string') return null;
   return {
     id: value.id,
