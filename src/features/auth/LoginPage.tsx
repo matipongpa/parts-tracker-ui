@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertCircle, Eye, EyeOff, Lock, User } from 'lucide-react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
@@ -113,6 +113,12 @@ export function LoginPage(): ReactElement {
           {submitting ? 'Logging in…' : 'Log in'}
         </Button>
       </form>
+      <p className="mt-6 text-center text-sm text-muted">
+        Have an invite code?{' '}
+        <Link to="/register" className="font-medium text-accent hover:underline">
+          Create an account
+        </Link>
+      </p>
     </AuthLayout>
   );
 }

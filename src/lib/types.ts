@@ -38,3 +38,11 @@ export interface LoginCredentials {
 export interface LoginResponse {
   token: string;
 }
+
+export interface RegisterInput {
+  username: string;
+  password: string;
+  firstName: string;
+  surname: string;
+  inviteCode: string;
+}

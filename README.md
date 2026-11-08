@@ -35,7 +35,7 @@ The dev server is pinned to port **4200** (`strictPort`) because the backend's C
 src/
   components/ui/       Button, TextField, Skeleton: small, token-driven primitives
   components/layout/   AppShell (header, theme toggle, log out)
-  features/auth/       LoginPage, shared AuthLayout
+  features/auth/       LoginPage, RegisterPage, shared AuthLayout
   features/parts/      PartsPage + filters, table, pagination, and their pure logic (query, pageItems, typeTone)
   lib/api/             fetch client (typed errors, runtime guards), auth + parts endpoints
   lib/auth/            token storage, AuthContext, ProtectedRoute
@@ -48,6 +48,7 @@ src/
 - **Filters and paging live in the URL** (`/parts?pn=LM358&type=Resistor&page=2&size=50`), so searches are shareable and Back/Forward work. `page` is 1-based in the URL, zero-based on the API.
 - **Search is debounced** (300 ms); paging is immediate. Previous results stay on screen (dimmed) while the next page loads.
 - **Auth:** the JWT is kept in `localStorage` under `token` (same key as the old Angular app). Any `401` from the API clears it and returns you to `/login`, then back to the page you were on.
+- **Registration:** `/register` needs the team invite code, which the backend checks against `REGISTER_INVITE_CODE`. If that variable is unset the backend answers 403 "Registration is closed". After a successful sign-up the page logs you in.
 - **Theming:** components use semantic tokens (`bg-surface`, `text-muted`, …) defined in `src/index.css`; light/dark is a `dark` class on `<html>`, set before first paint from the saved or system preference.
 
 ## Migration note
