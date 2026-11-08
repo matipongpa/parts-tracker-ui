@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { History, Plus, Sparkles, X } from 'lucide-react';
+import { History, Maximize2, Minimize2, Plus, Sparkles, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
 import { AskForm } from '@/features/assistant/AskForm';
 import { HistoryEntryView } from '@/features/assistant/HistoryEntryView';
 import { HistoryList } from '@/features/assistant/HistoryList';
+import { ResizeHandle } from '@/features/assistant/ResizeHandle';
+import { DEFAULT_WIDTH, WIDE_WIDTH, useAskWidth } from '@/features/assistant/useAskWidth';
 import { cn } from '@/lib/cn';
-import type { ReactElement, RefObject } from 'react';
+import type { CSSProperties, ReactElement, RefObject } from 'react';
 
 export const ASK_PANEL_ID = 'ask-panel';
 
@@ -24,6 +26,10 @@ interface AskPanelProps {
 export function AskPanel({ open, onClose }: AskPanelProps): ReactElement {
   const [entryId, setEntryId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState<boolean>(false);
+  const { width, setWidth, commit } = useAskWidth();
+  const [resizing, setResizing] = useState<boolean>(false);
+  // Past the default width the button narrows the panel again; otherwise it widens it.
+  const wide: boolean = width > DEFAULT_WIDTH;
   const panelRef: RefObject<HTMLElement | null> = useRef<HTMLElement | null>(null);
   const wasOpen: RefObject<boolean> = useRef<boolean>(false);
 
@@ -60,12 +66,17 @@ export function AskPanel({ open, onClose }: AskPanelProps): ReactElement {
       aria-label="Ask AI"
       // `inert` also removes the hidden panel from the tab order and the accessibility tree.
       inert={!open}
+      // The width only applies from the `sm` breakpoint up; a phone gets the full width. min() keeps a saved
+      // width from covering the whole page when the window is smaller than it was.
+      style={{ '--ask-w': `${width}px` } as CSSProperties}
       className={cn(
-        'fixed top-14 right-0 bottom-0 z-10 flex w-full flex-col border-l border-border bg-surface shadow-xl sm:w-[28rem]',
-        'transition-transform duration-200 ease-out',
+        'fixed top-14 right-0 bottom-0 z-10 flex w-full flex-col border-l border-border bg-surface shadow-xl sm:w-[min(var(--ask-w),calc(100vw-3rem))]',
+        // No width easing while dragging, or the panel would trail behind the pointer.
+        resizing ? 'transition-transform duration-200 ease-out select-none' : 'transition-[transform,width] duration-200 ease-out',
         open ? 'translate-x-0' : 'invisible translate-x-full',
       )}
     >
+      <ResizeHandle width={width} onResize={setWidth} onCommit={commit} onDraggingChange={setResizing} />
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Sparkles className="size-4 text-accent" aria-hidden="true" />
@@ -86,6 +97,16 @@ export function AskPanel({ open, onClose }: AskPanelProps): ReactElement {
             className={cn('px-2', showHistory && 'bg-accent-soft text-accent')}
           >
             <History className="size-4" aria-hidden="true" />
+          </Button>
+          {/* On a phone the panel is already full width, so there is nothing to expand. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(): void => commit(wide ? DEFAULT_WIDTH : WIDE_WIDTH)}
+            aria-label={wide ? 'Make Ask AI narrower' : 'Make Ask AI wider'}
+            className="hidden px-2 sm:inline-flex"
+          >
+            {wide ? <Minimize2 className="size-4" aria-hidden="true" /> : <Maximize2 className="size-4" aria-hidden="true" />}
           </Button>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close Ask AI" className="px-2">
             <X className="size-4" aria-hidden="true" />
