@@ -1,25 +1,34 @@
 import { AlertCircle, Plus } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/Skeleton';
 import { AnswerView } from '@/features/assistant/AnswerView';
 import { useHistoryEntry } from '@/features/assistant/useAssistantHistory';
 import { ApiError } from '@/lib/api/errors';
+import type { HistoryEntry } from '@/features/assistant/types';
+import type { UseQueryResult } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
 
-function NewQuestionLink(): ReactElement {
+interface HistoryEntryViewProps {
+  id: string;
+  onNewQuestion: () => void;
+}
+
+function NewQuestionButton({ onClick }: { onClick: () => void }): ReactElement {
   return (
-    <Link to="/ask" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+    >
       <Plus className="size-4" aria-hidden="true" />
       Ask a new question
-    </Link>
+    </button>
   );
 }
 
 /** A saved question and answer, shown exactly as it was. Opening one never calls the model. */
-export function HistoryEntryPage(): ReactElement {
-  const { id = '' } = useParams<'id'>();
-  const entry = useHistoryEntry(id);
+export function HistoryEntryView({ id, onNewQuestion }: HistoryEntryViewProps): ReactElement {
+  const entry: UseQueryResult<HistoryEntry> = useHistoryEntry(id);
 
   if (entry.isPending) {
     return (
@@ -39,14 +48,14 @@ export function HistoryEntryPage(): ReactElement {
         </span>
         <p className="font-medium">{missing ? 'This question is no longer in your history.' : 'Could not load this answer.'}</p>
         {!missing && <p className="text-sm text-muted">{entry.error.message}</p>}
-        <NewQuestionLink />
+        <NewQuestionButton onClick={onNewQuestion} />
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <NewQuestionLink />
+      <NewQuestionButton onClick={onNewQuestion} />
       <AnswerView entry={entry.data} />
     </div>
   );

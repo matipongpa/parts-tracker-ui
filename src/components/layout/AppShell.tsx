@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { CircuitBoard, List, LogOut, Moon, Sparkles, Sun } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
+import { ASK_PANEL_ID, AskPanel } from '@/features/assistant/AskPanel';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { ApiError } from '@/lib/api/errors';
@@ -16,16 +17,17 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { to: '/parts', label: 'Parts', icon: List },
-  { to: '/ask', label: 'Ask AI', icon: Sparkles },
-];
+const NAV_ITEMS: ReadonlyArray<NavItem> = [{ to: '/parts', label: 'Parts', icon: List }];
+
+const NAV_ITEM_CLASS = 'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors';
 
 export function AppShell(): ReactElement {
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [loggingOut, setLoggingOut] = useState<boolean>(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [askOpen, setAskOpen] = useState<boolean>(false);
+  const closeAsk: () => void = useCallback((): void => setAskOpen(false), []);
 
   async function handleLogout(): Promise<void> {
     setLoggingOut(true);
@@ -57,16 +59,24 @@ export function AppShell(): ReactElement {
                   key={to}
                   to={to}
                   className={({ isActive }: { isActive: boolean }): string =>
-                    cn(
-                      'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors',
-                      isActive ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-2 hover:text-fg',
-                    )
+                    cn(NAV_ITEM_CLASS, isActive ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-2 hover:text-fg')
                   }
                 >
                   <Icon className="size-4" aria-hidden="true" />
                   {label}
                 </NavLink>
               ))}
+              {/* Not a route: Ask AI is an overlay that stays open while you move between pages. */}
+              <button
+                type="button"
+                aria-expanded={askOpen}
+                aria-controls={ASK_PANEL_ID}
+                onClick={(): void => setAskOpen((current: boolean): boolean => !current)}
+                className={cn(NAV_ITEM_CLASS, askOpen ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-2 hover:text-fg')}
+              >
+                <Sparkles className="size-4" aria-hidden="true" />
+                Ask AI
+              </button>
             </nav>
           </div>
           <div className="flex items-center gap-1">
@@ -94,6 +104,7 @@ export function AppShell(): ReactElement {
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <Outlet />
       </main>
+      <AskPanel open={askOpen} onClose={closeAsk} />
     </div>
   );
 }

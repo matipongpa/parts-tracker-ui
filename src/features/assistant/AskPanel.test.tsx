@@ -1,37 +1,21 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { AskLayout } from '@/features/assistant/AskLayout';
-import { AskPage } from '@/features/assistant/AskPage';
-import { HistoryEntryPage } from '@/features/assistant/HistoryEntryPage';
+import { AskPanel } from '@/features/assistant/AskPanel';
 import { installApiMock, jsonResponse } from '@/test/apiMock';
 import { installFakeAskApi } from '@/test/fakeAskApi';
 import type { ApiMock } from '@/test/apiMock';
 import type { FakeAskApi } from '@/test/fakeAskApi';
 import type { UserEvent } from '@testing-library/user-event';
-import type { ReactElement } from 'react';
 
-function LocationProbe(): ReactElement {
-  return <span data-testid="location">{useLocation().pathname}</span>;
-}
-
-function renderAsk(): UserEvent {
+function renderAsk(open: boolean = true, onClose: () => void = (): void => undefined): UserEvent {
   const user: UserEvent = userEvent.setup();
   const client: QueryClient = new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/ask']}>
-        <Routes>
-          <Route path="/ask" element={<AskLayout />}>
-            <Route index element={<AskPage />} />
-            <Route path=":id" element={<HistoryEntryPage />} />
-          </Route>
-        </Routes>
-        <LocationProbe />
-      </MemoryRouter>
+      <AskPanel open={open} onClose={onClose} />
     </QueryClientProvider>,
   );
   return user;
@@ -42,7 +26,7 @@ async function ask(user: UserEvent, question: string): Promise<void> {
   await user.click(screen.getByRole('button', { name: 'Ask' }));
 }
 
-describe('AskPage', (): void => {
+describe('AskPanel', (): void => {
   let api: ApiMock;
   let server: FakeAskApi;
 
@@ -77,12 +61,11 @@ describe('AskPage', (): void => {
     expect(asks()).toBe(0);
   });
 
-  it('saves the answer, opens it at its own URL and adds it to the history list', async (): Promise<void> => {
+  it('saves the answer, shows it from the saved copy and adds it to the history list', async (): Promise<void> => {
     const user: UserEvent = renderAsk();
     await ask(user, '  Which projects use GRM188?  ');
 
     const answer: HTMLElement = await screen.findByRole('region', { name: 'Answer' });
-    expect(screen.getByTestId('location')).toHaveTextContent('/ask/1');
     expect(answer).toHaveTextContent('GRM188 is used in Alpha and Beta.');
     expect(answer).toHaveTextContent('Looked up: Checked part usage');
     // The question is shown exactly as it was sent (trimmed), above the answer.
@@ -94,6 +77,7 @@ describe('AskPage', (): void => {
 
     const sent: unknown = JSON.parse(String(api.callsTo('/ask').find((c): boolean => c.init?.method === 'POST')?.init?.body));
     expect(sent).toEqual({ question: 'Which projects use GRM188?' });
+    await user.click(screen.getByRole('button', { name: 'Previous questions' }));
     expect(await within(screen.getByRole('navigation', { name: 'Your previous questions' })).findByText('Which projects use GRM188?')).toBeInTheDocument();
   });
 
@@ -164,7 +148,6 @@ describe('AskPage', (): void => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('The assistant took too long');
     expect(screen.queryByRole('region', { name: 'Answer' })).not.toBeInTheDocument();
-    expect(screen.getByTestId('location')).toHaveTextContent('/ask');
     expect(server.entries).toHaveLength(0);
   });
 
@@ -175,9 +158,9 @@ describe('AskPage', (): void => {
 
     expect(await screen.findByRole('region', { name: 'Answer' })).toHaveTextContent('GRM188 is used in Alpha and Beta.');
     expect(screen.getByRole('alert')).toHaveTextContent('could not be saved to your history');
-    // Nothing to reopen later, so it stays on the form page.
-    expect(screen.getByTestId('location')).toHaveTextContent('/ask');
-    expect(screen.getByTestId('location')).not.toHaveTextContent('/ask/');
+    // Nothing to reopen later, so it stays in the form instead of switching to a saved entry.
+    expect(screen.getByRole('textbox', { name: 'Your question' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'New question' })).not.toBeInTheDocument();
   });
 
   it('disables asking again while a question is in flight', async (): Promise<void> => {
@@ -196,5 +179,40 @@ describe('AskPage', (): void => {
 
     release();
     expect(await screen.findByRole('region', { name: 'Answer' })).toBeInTheDocument();
+  });
+
+  it('keeps the draft when you look at the history and come back', async (): Promise<void> => {
+    const user: UserEvent = renderAsk();
+    await user.type(screen.getByLabelText('Your question'), 'half typed');
+    await user.click(screen.getByRole('button', { name: 'Previous questions' }));
+    await user.click(screen.getByRole('button', { name: 'Previous questions' }));
+
+    expect(screen.getByLabelText('Your question')).toHaveValue('half typed');
+  });
+
+  it('clears the box after the answer is saved, so a new question starts empty', async (): Promise<void> => {
+    const user: UserEvent = renderAsk();
+    await ask(user, 'first');
+    await screen.findByRole('region', { name: 'Answer' });
+    await user.click(screen.getByRole('button', { name: 'Ask a new question' }));
+
+    expect(screen.getByLabelText('Your question')).toHaveValue('');
+  });
+
+  it('closes on Escape and from the close button', async (): Promise<void> => {
+    let closed: number = 0;
+    const user: UserEvent = renderAsk(true, (): void => {
+      closed += 1;
+    });
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: 'Close Ask AI' }));
+
+    expect(closed).toBe(2);
+  });
+
+  it('is inert (out of the tab order) while closed', (): void => {
+    renderAsk(false);
+
+    expect(screen.getByLabelText('Ask AI', { selector: 'aside' })).toHaveAttribute('inert');
   });
 });

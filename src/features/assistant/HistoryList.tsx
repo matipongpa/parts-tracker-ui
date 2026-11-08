@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { NavLink, useMatch, useNavigate } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/Skeleton';
 import { formatAskedAt } from '@/features/assistant/formatDate';
 import { useDeleteHistoryEntry, useHistoryList } from '@/features/assistant/useAssistantHistory';
 import { cn } from '@/lib/cn';
 import type { HistoryItem } from '@/features/assistant/types';
-import type { PathMatch } from 'react-router-dom';
+import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query';
 import type { ReactElement } from 'react';
 
 interface HistoryRowProps {
   item: HistoryItem;
+  active: boolean;
+  onOpen: () => void;
   confirming: boolean;
   deleting: boolean;
   onAskConfirm: () => void;
@@ -19,18 +20,21 @@ interface HistoryRowProps {
   onDelete: () => void;
 }
 
-function HistoryRow({ item, confirming, deleting, onAskConfirm, onCancelConfirm, onDelete }: HistoryRowProps): ReactElement {
+function HistoryRow({ item, active, onOpen, confirming, deleting, onAskConfirm, onCancelConfirm, onDelete }: HistoryRowProps): ReactElement {
   return (
     <li className="group relative">
-      <NavLink
-        to={`/ask/${item.id}`}
-        className={({ isActive }: { isActive: boolean }): string =>
-          cn('block rounded-lg px-3 py-2 pr-11 text-sm transition-colors', isActive ? 'bg-accent-soft' : 'hover:bg-surface-2')
-        }
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-current={active ? 'true' : undefined}
+        className={cn(
+          'block w-full rounded-lg px-3 py-2 pr-11 text-left text-sm transition-colors',
+          active ? 'bg-accent-soft' : 'hover:bg-surface-2',
+        )}
       >
         <span className="line-clamp-2 font-medium break-words">{item.question}</span>
         <span className="mt-0.5 block text-xs text-muted">{formatAskedAt(item.createdAt)}</span>
-      </NavLink>
+      </button>
       {/* Two clicks to delete: an answer can take a minute to produce and cannot be brought back. */}
       <button
         type="button"
@@ -51,20 +55,25 @@ function HistoryRow({ item, confirming, deleting, onAskConfirm, onCancelConfirm,
   );
 }
 
+interface HistoryListProps {
+  /** The entry currently open in the panel, if any. */
+  openId: string | null;
+  onOpen: (id: string) => void;
+  /** Called after an entry is deleted, so the panel can leave it if it was the open one. */
+  onDeleted: (id: string) => void;
+}
+
 /** The signed-in user's saved questions, newest first. */
-export function HistoryList(): ReactElement {
-  const list = useHistoryList();
-  const remove = useDeleteHistoryEntry();
-  const navigate = useNavigate();
-  const open: PathMatch<'id'> | null = useMatch('/ask/:id');
+export function HistoryList({ openId, onOpen, onDeleted }: HistoryListProps): ReactElement {
+  const list: UseQueryResult<HistoryItem[]> = useHistoryList();
+  const remove: UseMutationResult<void, Error, string> = useDeleteHistoryEntry();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   function handleDelete(id: string): void {
     remove.mutate(id, {
       onSuccess: (): void => {
         setConfirmingId(null);
-        // Do not leave the user looking at an entry that no longer exists.
-        if (open?.params.id === id) void navigate('/ask', { replace: true });
+        onDeleted(id);
       },
     });
   }
@@ -97,6 +106,8 @@ export function HistoryList(): ReactElement {
             <HistoryRow
               key={item.id}
               item={item}
+              active={openId === item.id}
+              onOpen={(): void => onOpen(item.id)}
               confirming={confirmingId === item.id}
               deleting={remove.isPending && remove.variables === item.id}
               onAskConfirm={(): void => setConfirmingId(item.id)}

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
 import { TextArea } from '@/components/ui/TextArea';
@@ -10,7 +9,6 @@ import { useAskAssistant } from '@/features/assistant/useAssistantHistory';
 import { ApiError } from '@/lib/api/errors';
 import type { HistoryEntry } from '@/features/assistant/types';
 import type { UseMutationResult } from '@tanstack/react-query';
-import type { NavigateFunction } from 'react-router-dom';
 import type { FormEvent, KeyboardEvent, ReactElement } from 'react';
 
 const EXAMPLES: ReadonlyArray<string> = [
@@ -42,11 +40,15 @@ function describeError(error: Error): string {
   return 'Something went wrong. Please try again.';
 }
 
-export function AskPage(): ReactElement {
+interface AskFormProps {
+  /** Called with the id of the saved entry, so the panel can show it from the saved copy. */
+  onSaved: (id: string) => void;
+}
+
+export function AskForm({ onSaved }: AskFormProps): ReactElement {
   const [question, setQuestion] = useState<string>('');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const ask: UseMutationResult<HistoryEntry, Error, string> = useAskAssistant();
-  const navigate: NavigateFunction = useNavigate();
 
   function submit(): void {
     if (ask.isPending) return;
@@ -54,9 +56,11 @@ export function AskPage(): ReactElement {
     setFieldError(problem);
     if (problem !== null) return;
     ask.mutate(question.trim(), {
-      // A saved answer lives at its own URL, shown from the saved copy. An unsaved one stays on this page.
+      // A saved answer is shown from the saved copy. An unsaved one stays in this form.
       onSuccess: (entry: HistoryEntry): void => {
-        if (entry.id !== '') void navigate(`/ask/${entry.id}`);
+        if (entry.id === '') return;
+        setQuestion('');
+        onSaved(entry.id);
       },
     });
   }
@@ -71,14 +75,11 @@ export function AskPage(): ReactElement {
   const used: number = countCharacters(question);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Ask AI</h1>
-        <p className="mt-1 text-sm text-muted">
-          Ask about your parts in plain language. The answer is based on a live lookup of your catalogue, and the matching
-          parts are listed beneath it.
-        </p>
-      </div>
+    <div className="space-y-5">
+      <p className="text-sm text-muted">
+        Ask about your parts in plain language. The answer is based on a live lookup of your catalogue, and the matching
+        parts are listed beneath it.
+      </p>
 
       <form
         onSubmit={(event: FormEvent<HTMLFormElement>): void => {
@@ -97,27 +98,25 @@ export function AskPage(): ReactElement {
           error={fieldError ?? undefined}
           hint={`${NUMBER_FORMAT.format(used)} / ${NUMBER_FORMAT.format(MAX_QUESTION_LENGTH)}`}
         />
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {EXAMPLES.map((example: string): ReactElement => (
-              <button
-                key={example}
-                type="button"
-                onClick={(): void => {
-                  setQuestion(example);
-                  setFieldError(null);
-                }}
-                className="rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted transition-colors hover:border-border-strong hover:text-fg"
-              >
-                {example}
-              </button>
-            ))}
-          </div>
-          <Button type="submit" variant="primary" loading={ask.isPending}>
-            <Sparkles className="size-4" aria-hidden="true" />
-            {ask.isPending ? 'Looking it up…' : 'Ask'}
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {EXAMPLES.map((example: string): ReactElement => (
+            <button
+              key={example}
+              type="button"
+              onClick={(): void => {
+                setQuestion(example);
+                setFieldError(null);
+              }}
+              className="rounded-full border border-border bg-surface px-3 py-1 text-left text-xs text-muted transition-colors hover:border-border-strong hover:text-fg"
+            >
+              {example}
+            </button>
+          ))}
         </div>
+        <Button type="submit" variant="primary" loading={ask.isPending} className="w-full">
+          <Sparkles className="size-4" aria-hidden="true" />
+          {ask.isPending ? 'Looking it up…' : 'Ask'}
+        </Button>
       </form>
 
       {ask.isPending && (
