@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { CircuitBoard, List, LogOut, Moon, Sparkles, Sun } from 'lucide-react';
+import { CircuitBoard, List, LogOut, Moon, Sparkles, Sun, Upload } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
@@ -17,7 +17,10 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-const NAV_ITEMS: ReadonlyArray<NavItem> = [{ to: '/parts', label: 'Parts', icon: List }];
+const NAV_ITEMS: ReadonlyArray<NavItem> = [
+  { to: '/parts', label: 'Parts', icon: List },
+  { to: '/import', label: 'Import', icon: Upload },
+];
 
 const NAV_ITEM_CLASS = 'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors';
 
