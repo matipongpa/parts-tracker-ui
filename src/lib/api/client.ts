@@ -5,6 +5,7 @@ import { getAccessToken, refreshAccessToken } from '@/lib/api/session';
 
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'DELETE';
+  /** JSON-encoded unless it is a FormData, which is sent as multipart and gets its boundary from the browser. */
   body?: unknown;
   params?: URLSearchParams;
   /** Attach the bearer token, and on a 401 refresh it once and retry. Defaults to true; login turns it off. */
@@ -39,7 +40,9 @@ async function send(path: string, options: RequestOptions, token: string | null)
 
   const query: string = params && params.size > 0 ? `?${params.toString()}` : '';
   const headers: Headers = new Headers({ Accept: 'application/json' });
-  if (body !== undefined) headers.set('Content-Type', 'application/json');
+  const isForm: boolean = body instanceof FormData;
+  // For multipart, never set Content-Type by hand: fetch adds it with the boundary.
+  if (body !== undefined && !isForm) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
   let response: Response;
@@ -47,7 +50,7 @@ async function send(path: string, options: RequestOptions, token: string | null)
     response = await fetch(`${API_URL}${path}${query}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
       credentials: withCookies ? 'include' : 'same-origin',
       signal,
     });
