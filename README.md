@@ -1,6 +1,8 @@
 # parts-tracker-ui
 
-Web UI for [parts-tracker-backend](../parts-tracker-backend): log in, then search and browse electronic parts across projects and PCBs.
+[![CI](https://github.com/matipongpa/parts-tracker-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/matipongpa/parts-tracker-ui/actions/workflows/ci.yml)
+
+Web UI for [parts-tracker-backend](https://github.com/matipongpa/parts-tracker-backend): log in, search and browse electronic parts across projects and PCBs, import BOM spreadsheets with a column-mapping preview, and ask questions about the parts data in plain language.
 
 **Stack:** React 19 · TypeScript (strict) · Vite · React Router · TanStack Query · Tailwind CSS v4 · Vitest + Testing Library.
 
@@ -60,4 +62,4 @@ src/
 
 ## Migration note
 
-This replaced the Angular 20 + Angular Material app. The `docs/` folder still contains the **old Angular production build** and is untouched; it is not rebuilt from this code.
+This replaced an earlier Angular 20 + Angular Material version of the app.
